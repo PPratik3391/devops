@@ -14,4 +14,4 @@ jobs:
           if (-Not (Test-Path $chromePath)) {
             $chromePath = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
           }
-          & $chromePath "digitaltools.wm.com"
+          & $chromePath "https://digitaltools.wm.com"
