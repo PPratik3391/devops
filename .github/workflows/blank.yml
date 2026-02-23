@@ -34,6 +34,3 @@ jobs:
         run: |
           echo Add other actions to build,
           echo test, and deploy your project.
-          sudo apt install xdg-utils # Debian/Ubuntu
-          sudo dnf install xdg-utils # Fedora/RHEL
-          xdg-open https://digitaltools.wm.com/
