@@ -10,5 +10,5 @@ jobs:
       - name: Open URL in Chrome
         shell: powershell
         run: |
-          start "" "C:\Program Files\Google\Chrome\Application\chrome.exe" "https://digitaltools.wm.com"
-          timeout /t 10
+         Start-Process "chrome.exe" -ArgumentList "https://digitaltools.wm.com"
+         timeout /t 10
