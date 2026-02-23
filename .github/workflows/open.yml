@@ -11,4 +11,5 @@ jobs:
         shell: powershell
         run: |
          Start-Process "chrome.exe" -ArgumentList "https://digitaltools.wm.com"
+                  timeout /t 2
          
