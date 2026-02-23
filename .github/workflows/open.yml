@@ -1,17 +1,13 @@
-name: Open URL in Chrome (Windows)
+name: Open URL Locally
 
 on:
   workflow_dispatch:
 
 jobs:
   open-url:
-    runs-on: windows-latest
+    runs-on: self-hosted
     steps:
       - name: Open URL in Chrome
         shell: powershell
         run: |
-          $chromePath = "C:\Program Files\Google\Chrome\Application\chrome.exe"
-          if (-Not (Test-Path $chromePath)) {
-            $chromePath = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
-          }
-          & $chromePath "https://digitaltools.wm.com"
+          start chrome "https://digitaltools.wm.com/"
