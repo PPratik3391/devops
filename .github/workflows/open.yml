@@ -10,6 +10,6 @@ jobs:
       - name: Open URL in Chrome
         shell: powershell
         run: |
-          powershell -ExecutionPolicy Bypass -File "C:\automation\open_and_fill.ps1"          
+          powershell -ExecutionPolicy Bypass -File "C:\automation\fill.ps1"          
           Start-Sleep -Seconds 9
          
