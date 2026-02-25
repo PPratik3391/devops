@@ -48,13 +48,4 @@ jobs:
            $url = "${{ steps.makeurl.outputs.url }}"
            Start-Process "chrome.exe" -ArgumentList @("--new-window", $url)
            Start-Sleep -Seconds 9
-          # Try standard Chrome install path first; fallback to PATH
-          #$chromePaths = @(
-            #"$Env:ProgramFiles\Google\Chrome\Application\chrome.exe",
-            #"$Env:ProgramFiles(x86)\Google\Chrome\Application\chrome.exe"
-         # )
-         # $chrome = $chromePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
-         # if (-not $chrome) { $chrome = "chrome.exe" }
-
-          # Launch in a new window (remove --new-window if you prefer reusing an existing window)
-           
+          
