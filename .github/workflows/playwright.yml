@@ -6,7 +6,7 @@ on:
       testUrl:
         description: "Target page URL"
         required: true
-        default: "https://your-internal-or-public-url"
+        default: "https://webportal.wm.com/"
 
 jobs:
   e2e:
