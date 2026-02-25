@@ -16,11 +16,15 @@ jobs:
       
     steps:
       - name: Validate inputs
-        shell: bash
+        shell: pwsh
+        env:
+          ISSUE_KEY: ${{ github.event.inputs.issueKey }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+
         run: |
           if [ -z "${{ github.event.inputs.issueKey }}" ]; then
             echo "issueKey is required" && exit 1
-            echo $JIRA_BASE_URL
+            echo $env.JIRA_BASE_URL
           fi
           if [ -z "$JIRA_BASE_URL" ]; then
             echo "Set JIRA_BASE_URL (repo secret) to your Jira base URL" && exit 1
