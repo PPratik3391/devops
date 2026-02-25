@@ -14,7 +14,7 @@ jobs:
       JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
     steps:
       - name: Validate inputs (PowerShell)
-        shell: pwsh
+        shell: powershell
         env:
           ISSUE_KEY: ${{ github.event.inputs.issueKey }}
         run: |
@@ -30,7 +30,7 @@ jobs:
 
       - name: Compose URL
         id: makeurl
-        shell: pwsh
+        shell: powershell
         env:
           ISSUE_KEY: ${{ github.event.inputs.issueKey }}
         run: |
