@@ -20,6 +20,7 @@ jobs:
         run: |
           if [ -z "${{ github.event.inputs.issueKey }}" ]; then
             echo "issueKey is required" && exit 1
+            echo $JIRA_BASE_URL
           fi
           if [ -z "$JIRA_BASE_URL" ]; then
             echo "Set JIRA_BASE_URL (repo secret) to your Jira base URL" && exit 1
