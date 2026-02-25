@@ -5,7 +5,7 @@ on:
    inputs:
       issueKey:
         description: "Jira issue key, e.g., ABC-123"
-        required: true
+        #required: true
         type: string
 jobs:
   open:
