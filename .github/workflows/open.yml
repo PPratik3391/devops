@@ -2,14 +2,54 @@ name: Open URL Locally
 
 on:
   workflow_dispatch:
-
+   inputs:
+      issueKey:
+        description: "Jira issue key, e.g., ABC-123"
+        required: true
+        type: string
 jobs:
-  open-url:
-    runs-on: self-hosted
+  open:
+    runs-on: self-hosted       
+    env:
+      # Set your Jira base URL here or store in secrets
+      JIRA_BASE_URL: https://wastemanagement.atlassian.net/
+
     steps:
-      - name: Open URL in Chrome
+      - name: Validate inputs
+        shell: bash
+        run: |
+          if [ -z "${{ github.event.inputs.issueKey }}" ]; then
+            echo "issueKey is required" && exit 1
+          fi
+          if [ -z "$JIRA_BASE_URL" ]; then
+            echo "Set JIRA_BASE_URL (repo secret) to your Jira base URL" && exit 1
+          fi
+
+      - name: Compose URL
+        id: makeurl
+        shell: bash
+        run: |
+          ISSUE="${{ github.event.inputs.issueKey }}"
+          URL="${JIRA_BASE_URL}/browse/${ISSUE}"
+          echo "Opening: $URL"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      # ---------- Windows ----------
+      - name: Open in Chrome (Windows)
+        if: runner.os == 'Windows'
         shell: powershell
         run: |
-          powershell -ExecutionPolicy Bypass -File "C:\automation\fill.ps1"          
-          Start-Sleep -Seconds 9
-         
+           #Start-Process "chrome.exe" -ArgumentList "https://wastemanagement.atlassian.net/"
+           $url = "${{ steps.makeurl.outputs.url }}"
+           Start-Process "chrome.exe" -ArgumentList @("--new-window", $url)
+           Start-Sleep -Seconds 9
+          # Try standard Chrome install path first; fallback to PATH
+          #$chromePaths = @(
+            #"$Env:ProgramFiles\Google\Chrome\Application\chrome.exe",
+            #"$Env:ProgramFiles(x86)\Google\Chrome\Application\chrome.exe"
+         # )
+         # $chrome = $chromePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+         # if (-not $chrome) { $chrome = "chrome.exe" }
+
+          # Launch in a new window (remove --new-window if you prefer reusing an existing window)
+           
