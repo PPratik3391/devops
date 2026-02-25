@@ -9,35 +9,35 @@ on:
         type: string
 jobs:
   open:
-    runs-on: self-hosted       
-    env:
-      # Set your Jira base URL here or store in secrets
-      JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }} # e.g., https://your-domain.atlassian.net
-      
+    runs-on: self-hosted         
+    env: 
+      JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
     steps:
-      - name: Validate inputs
+      - name: Validate inputs (PowerShell)
         shell: pwsh
         env:
           ISSUE_KEY: ${{ github.event.inputs.issueKey }}
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-
         run: |
-          if [ -z "${{ github.event.inputs.issueKey }}" ]; then
-            echo "issueKey is required" && exit 1
-            echo $env.JIRA_BASE_URL
-          fi
-          if [ -z "$JIRA_BASE_URL" ]; then
-            echo "Set JIRA_BASE_URL (repo secret) to your Jira base URL" && exit 1
-          fi
+          if ([string]::IsNullOrWhiteSpace($env:ISSUE_KEY)) {
+            Write-Host "issueKey is required"
+            exit 1
+          }
+          if ([string]::IsNullOrWhiteSpace($env:JIRA_BASE_URL)) {
+            Write-Host "Set JIRA_BASE_URL (repo secret) to your Jira base URL, e.g., https://your-domain.atlassian.net"
+            exit 1
+          }
+          Write-Host "Inputs OK. ISSUE_KEY=$($env:ISSUE_KEY)  JIRA_BASE_URL=$($env:JIRA_BASE_URL)"
 
       - name: Compose URL
         id: makeurl
-        shell: bash
+        shell: pwsh
+        env:
+          ISSUE_KEY: ${{ github.event.inputs.issueKey }}
         run: |
-          ISSUE="${{ github.event.inputs.issueKey }}"
-          URL="${JIRA_BASE_URL}/browse/${ISSUE}"
-          echo "Opening: $URL"
-          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          $url = "$env:JIRA_BASE_URL/browse/$env:ISSUE_KEY"
+          Write-Host "Opening: $url"
+          "url=$url" >> $env:GITHUB_OUTPUT
+
 
       # ---------- Windows ----------
       - name: Open in Chrome (Windows)
