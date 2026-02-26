@@ -2,50 +2,95 @@ name: Open URL Locally
 
 on:
   workflow_dispatch:
-   inputs:
-      issueKey:
-        description: "Jira issue key, e.g., ABC-123"
-        #required: true
+    inputs:
+      issueKeys:
+        description: "One or more Jira issue keys (comma, space, or newline separated), e.g., ABC-123 DEF-456"
         type: string
+
 jobs:
   open:
-    runs-on: self-hosted         
-    env: 
+    runs-on: self-hosted
+    env:
       JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+
     steps:
       - name: Validate inputs (PowerShell)
         shell: powershell
         env:
-          ISSUE_KEY: ${{ github.event.inputs.issueKey }}
+          ISSUE_KEYS_RAW: ${{ github.event.inputs.issueKeys }}
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:ISSUE_KEY)) {
-            Write-Host "issueKey is required"
-            exit 1
-          }
           if ([string]::IsNullOrWhiteSpace($env:JIRA_BASE_URL)) {
             Write-Host "Set JIRA_BASE_URL (repo secret) to your Jira base URL, e.g., https://your-domain.atlassian.net"
             exit 1
           }
-          Write-Host "Inputs OK. ISSUE_KEY=$($env:ISSUE_KEY)  JIRA_BASE_URL=$($env:JIRA_BASE_URL)"
 
-      - name: Compose URL
-        id: makeurl
+          if ([string]::IsNullOrWhiteSpace($env:ISSUE_KEYS_RAW)) {
+            Write-Host "issueKeys is required (provide at least one Jira key)."
+            exit 1
+          }
+
+          # Split on commas, whitespace (spaces, tabs), and newlines. Remove empties.
+          $keys = ($env:ISSUE_KEYS_RAW -split '[,\s]+' | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+
+          if ($keys.Count -eq 0) {
+            Write-Host "No valid Jira keys found after parsing input."
+            exit 1
+          }
+
+          # Optional: light validation (allows letters/digits in project and digits for issue number).
+          $invalid = $keys | Where-Object { $_ -notmatch '^[A-Za-z0-9]+-\d+$' }
+          if ($invalid.Count -gt 0) {
+            Write-Host "Warning: Some keys don't look like KEY-123 format: $($invalid -join ', ')"
+            # Do not exit; continue if you prefer strict mode uncomment below:
+            # exit 1
+          }
+
+          Write-Host "Inputs OK. Keys parsed: $($keys -join ', ')"
+          # Re-emit normalized keys for next steps
+          "ISSUE_KEYS_PARSED=$($keys -join ' ')" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Compose URLs
+        id: makeurls
         shell: powershell
-        env:
-          ISSUE_KEY: ${{ github.event.inputs.issueKey }}
         run: |
-          $url = "$env:JIRA_BASE_URL/browse/$env:ISSUE_KEY"
-          Write-Host "Opening: $url"
-          "url=$url" >> $env:GITHUB_OUTPUT
+          $keys = $env:ISSUE_KEYS_PARSED -split '\s+'
+          $urls = @()
+          foreach ($k in $keys) {
+            $urls += "$env:JIRA_BASE_URL/browse/$k"
+          }
+          Write-Host "Will open URLs:"
+          $urls | ForEach-Object { Write-Host " - $_" }
 
+          # Join with newline so we can safely pass multiple as output
+          $joined = [string]::Join("`n", $urls)
+          # Write to GITHUB_OUTPUT (each line is a tab)
+          "urls<<EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          $joined | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          "EOF" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       # ---------- Windows ----------
-      - name: Open in Chrome (Windows)
+      - name: Open all in Chrome (Windows)
         if: runner.os == 'Windows'
         shell: powershell
         run: |
-           #Start-Process "chrome.exe" -ArgumentList "https://wastemanagement.atlassian.net/"
-           $url = "${{ steps.makeurl.outputs.url }}"
-           Start-Process "chrome.exe" -ArgumentList @("--new-window", $url)
-           Start-Sleep -Seconds 9
+          $urls = @()
+          # Read the multi-line output set above
+          @"
+          ${{ steps.makeurls.outputs.urls }}
+          "@ -split "`r?`n" | ForEach-Object {
+                      if (-not [string]::IsNullOrWhiteSpace($_)) { $urls += $_ }
+                    }
           
+                    if ($urls.Count -eq 0) {
+                      Write-Host "No URLs to open."
+                      exit 1
+                    }
+
+          # Open one new Chrome window with all URLs as tabs
+          # Chrome accepts multiple URLs; --new-window ensures a separate window.
+          $args = @("--new-window") + $urls
+          Write-Host "Launching Chrome with $($urls.Count) tabs..."
+          Start-Process "chrome.exe" -ArgumentList $args
+
+          # Give Chrome a moment to spawn before job ends (optional)
+          Start-Sleep -Seconds 5
